@@ -1,0 +1,49 @@
+{
+  "name": "ai-coding-agent",
+  "displayName": "AI Coding Agent",
+  "description": "Agentic AI coding assistant powered by Gemini — like Cursor/Antigravity",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiCodingAgent.openChat",
+        "title": "Open AI Coding Agent"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiCodingAgentSidebar",
+          "title": "AI Coding Agent",
+          "icon": "resources/robot.svg"
+        }
+      ]
+    },
+    "views": {
+      "aiCodingAgentSidebar": [
+        {
+          "type": "webview",
+          "id": "aiCodingAgent.chatView",
+          "name": "Chat"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "@types/vscode": "^1.74.0",
+    "typescript": "^5.0.0"
+  }
+}

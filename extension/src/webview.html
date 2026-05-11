@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--vscode-font-family);background:var(--vscode-sideBar-background);color:var(--vscode-foreground);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px}
+#header{padding:8px 12px;font-size:12px;font-weight:600;border-bottom:1px solid var(--vscode-panel-border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.dot{width:7px;height:7px;border-radius:50%;background:#4caf50;flex-shrink:0}
+.dot.thinking{background:#f0a500;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#providerTag{font-size:10px;opacity:.45;font-weight:400}
+#clearBtn{margin-left:auto;background:none;border:1px solid var(--vscode-panel-border);color:var(--vscode-foreground);cursor:pointer;font-size:11px;padding:2px 8px;border-radius:4px;opacity:.6}
+#clearBtn:hover{opacity:1}
+#messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.msg{display:flex;flex-direction:column;gap:3px}
+.lbl{font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.user .lbl{align-self:flex-end}
+.bbl{padding:8px 12px;border-radius:8px;line-height:1.6;word-break:break-word}
+.user .bbl{background:var(--vscode-button-background);color:var(--vscode-button-foreground);align-self:flex-end;max-width:88%}
+.agent .bbl{background:var(--vscode-editor-inactiveSelectionBackground);border:1px solid var(--vscode-panel-border)}
+.agent .bbl p{margin:4px 0}
+.agent .bbl h3,.agent .bbl h4{margin:8px 0 4px;font-size:13px}
+.agent .bbl ul,.agent .bbl ol{margin:4px 0 4px 18px}
+.agent .bbl li{margin:2px 0}
+.agent .bbl strong{color:var(--vscode-foreground)}
+.agent .bbl em{opacity:.85}
+.agent .bbl code.il{background:var(--vscode-textCodeBlock-background);padding:1px 5px;border-radius:3px;font-family:var(--vscode-editor-font-family);font-size:12px}
+.cb{margin:6px 0;border-radius:6px;overflow:hidden;border:1px solid var(--vscode-panel-border)}
+.cb-hd{padding:4px 10px;font-size:10px;font-family:var(--vscode-editor-font-family);background:rgba(255,255,255,.04);border-bottom:1px solid var(--vscode-panel-border);opacity:.6}
+.cb pre{margin:0;padding:8px 10px;background:var(--vscode-editor-background);font-family:var(--vscode-editor-font-family);font-size:12px;overflow-x:auto;white-space:pre;line-height:1.5}
+.cursor{display:inline-block;width:2px;height:14px;background:var(--vscode-foreground);margin-left:2px;vertical-align:middle;animation:blink .7s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.tb{margin:4px 0;border:1px solid var(--vscode-panel-border);border-radius:6px;overflow:hidden;font-size:12px}
+.tb-hd{padding:5px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;background:var(--vscode-editor-inactiveSelectionBackground);user-select:none}
+.tb-hd:hover{opacity:.85}
+.tb-ch{font-size:10px;transition:transform .2s;opacity:.6}
+.tb-ch.open{transform:rotate(90deg)}
+.tb-bd{display:none;padding:8px 12px;background:var(--vscode-editor-background);font-family:var(--vscode-editor-font-family);white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;border-top:1px solid var(--vscode-panel-border);font-size:11px;line-height:1.5}
+.tb-bd.open{display:block}
+.pc{margin:4px 0;border:1px solid rgba(240,165,0,.5);border-radius:8px;overflow:hidden;font-size:12px}
+.pc-hd{padding:6px 12px;background:rgba(240,165,0,.1);font-weight:600;display:flex;align-items:center;gap:6px}
+.pc-bd{padding:8px 12px;background:var(--vscode-editor-background);font-family:var(--vscode-editor-font-family);font-size:12px;white-space:pre;overflow-x:auto;max-height:180px;overflow-y:auto;line-height:1.5}
+.pc-act{display:flex;gap:8px;padding:8px 12px;background:var(--vscode-editor-inactiveSelectionBackground)}
+.btn-ok{background:#2d7d46;color:#fff;border:none;border-radius:5px;padding:5px 16px;cursor:pointer;font-size:12px;font-weight:600}
+.btn-ok:hover{background:#3a9957}
+.btn-no{background:none;color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);border-radius:5px;padding:5px 16px;cursor:pointer;font-size:12px}
+.btn-no:hover{opacity:.7}
+.badge-ok{display:inline-block;background:#2d7d46;color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;margin-left:6px}
+.badge-no{display:inline-block;background:#8b0000;color:#fff;font-size:10px;padding:1px 7px;border-radius:10px;margin-left:6px}
+.err-bbl{padding:8px 12px;border-radius:8px;background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.3);color:#f44336;font-size:12px}
+.thought-block{background:rgba(0,0,0,0.1);border-left:3px solid #f0a500;padding:8px 12px;margin:8px 0;font-size:11px;opacity:0.8;border-radius:0 4px 4px 0;font-family:var(--vscode-editor-font-family)}
+#input-area{padding:10px 12px;border-top:1px solid var(--vscode-panel-border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
+#input{flex:1;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);border-radius:6px;padding:8px 10px;font-size:13px;font-family:var(--vscode-font-family);resize:none;min-height:36px;max-height:120px;outline:none}
+#input:focus{border-color:var(--vscode-focusBorder)}
+#sendBtn{background:var(--vscode-button-background);color:var(--vscode-button-foreground);border:none;border-radius:6px;padding:0 14px;height:36px;cursor:pointer;font-size:16px;flex-shrink:0}
+#sendBtn:hover{opacity:.85}
+#sendBtn:disabled{opacity:.35;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="dot" id="statusDot"></div>
+  <span id="statusText">AI Coding Agent</span>
+  <span id="providerTag"></span>
+  <button id="clearBtn">Clear</button>
+</div>
+
+<div id="messages">
+  <div class="msg agent">
+    <span class="lbl">Agent</span>
+    <div class="bbl"><strong>Hi!</strong> I'm your AI coding agent.
+
+I'll think step by step, read your code, and ask permission before making changes.
+
+Try: <strong>fix the app in this folder</strong> or <strong>create a flask todo app</strong></div>
+  </div>
+</div>
+
+<div id="input-area">
+  <textarea id="input" placeholder="Ask me to build something... (Enter to send)" rows="1"></textarea>
+  <button id="sendBtn">&#10148;</button>
+</div>
+
+<script>
+(function(){
+var vscode=acquireVsCodeApi();
+var msgEl=document.getElementById('messages');
+var inputEl=document.getElementById('input');
+var sendBtn=document.getElementById('sendBtn');
+var clearBtn=document.getElementById('clearBtn');
+var statusDot=document.getElementById('statusDot');
+var statusText=document.getElementById('statusText');
+var providerTag=document.getElementById('providerTag');
+var sBubble=null,sText='';
+
+function setStatus(s){
+  if(s==='thinking'){
+    statusDot.className='dot thinking';statusText.textContent='Agent is thinking...';
+    sendBtn.disabled=false;sendBtn.innerHTML='&#9632;';sendBtn.style.background='#8b0000';
+    sendBtn.onclick=function(){vscode.postMessage({command:'stopAgent'});setStatus('idle');
+      if(sBubble){sBubble.innerHTML+='<br><span style="opacity:.5;font-style:italic">Stopped</span>';finalize();}};
+  }else if(s==='waiting'){
+    statusDot.className='dot thinking';statusText.textContent='Waiting for approval...';
+    sendBtn.disabled=true;sendBtn.innerHTML='&#10148;';sendBtn.style.background='var(--vscode-button-background)';sendBtn.onclick=null;
+  }else{
+    statusDot.className='dot';statusText.textContent='AI Coding Agent';
+    sendBtn.disabled=false;sendBtn.innerHTML='&#10148;';sendBtn.style.background='var(--vscode-button-background)';sendBtn.onclick=null;
+  }
+}
+
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escA(t){return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'');}
+
+/* ── Markdown renderer ────────────────────── */
+function renderMd(text){
+  text = text.replace(/<thought>/g, 'THOUGHT_START_MARKER');
+  text = text.replace(/<\/thought>/g, 'THOUGHT_END_MARKER');
+  var lines=text.split('\n'),html='',i=0,inUl=false,inOl=false;
+  while(i<lines.length){
+    var ln=lines[i];
+    if(ln.trim().indexOf('```')===0){
+      if(inUl){html+='</ul>';inUl=false;}if(inOl){html+='</ol>';inOl=false;}
+      var lang=ln.trim().slice(3).trim()||'code';i++;var code=[];
+      while(i<lines.length&&lines[i].trim().indexOf('```')!==0){code.push(lines[i]);i++;}
+      if(i<lines.length)i++;
+      html+='<div class="cb"><div class="cb-hd">'+esc(lang)+'</div><pre>'+esc(code.join('\n'))+'</pre></div>';
+      continue;
+    }
+    if(inUl&&!/^\s*[-*]\s/.test(ln)){html+='</ul>';inUl=false;}
+    if(inOl&&!/^\s*\d+\.\s/.test(ln)){html+='</ol>';inOl=false;}
+    if(/^###\s/.test(ln)){html+='<h4>'+renderInline(ln.slice(4))+'</h4>';i++;continue;}
+    if(/^##\s/.test(ln)){html+='<h3>'+renderInline(ln.slice(3))+'</h3>';i++;continue;}
+    if(/^#\s/.test(ln)){html+='<h3>'+renderInline(ln.slice(2))+'</h3>';i++;continue;}
+    if(/^\s*[-*]\s/.test(ln)){
+      if(!inUl){html+='<ul>';inUl=true;}
+      html+='<li>'+renderInline(ln.replace(/^\s*[-*]\s/,''))+'</li>';i++;continue;
+    }
+    if(/^\s*\d+\.\s/.test(ln)){
+      if(!inOl){html+='<ol>';inOl=true;}
+      html+='<li>'+renderInline(ln.replace(/^\s*\d+\.\s/,''))+'</li>';i++;continue;
+    }
+    if(ln.trim()===''){html+='<br>';i++;continue;}
+    html+='<p>'+renderInline(ln)+'</p>';i++;
+  }
+  if(inUl)html+='</ul>';if(inOl)html+='</ol>';
+  html = html.replace(/<p>THOUGHT_START_MARKER<\/p>/g, '<div class="thought-block"><em>Thinking...</em><br>');
+  html = html.replace(/THOUGHT_START_MARKER/g, '<div class="thought-block"><em>Thinking...</em><br>');
+  html = html.replace(/<p>THOUGHT_END_MARKER<\/p>/g, '</div>');
+  html = html.replace(/THOUGHT_END_MARKER/g, '</div>');
+  return html;
+}
+function renderInline(t){
+  t=esc(t);
+  t=t.replace(/`([^`]+)`/g,'<code class="il">$1</code>');
+  t=t.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/\*([^*]+)\*/g,'<em>$1</em>');
+  return t;
+}
+
+/* ── Streaming bubble ─────────────────────── */
+var tokenQueue = [];   // queued tokens to be revealed progressively
+var revealTimer = null;
+var donePending = false; // true after 'done' received; timer calls finalizeNow when queue empties
+
+function ensureBubble(){
+  if(sBubble) return;
+  var d=document.createElement('div');d.className='msg agent';
+  var b=document.createElement('div');b.className='bbl';
+  b.innerHTML='<span class="cursor"></span>';
+  var l=document.createElement('span');l.className='lbl';l.textContent='Agent';
+  d.appendChild(l);d.appendChild(b);msgEl.appendChild(d);msgEl.scrollTop=msgEl.scrollHeight;
+  sBubble=b;
+  // NOTE: do NOT reset sText here — finalize may have already populated it
+}
+
+function startReveal(){
+  if(revealTimer) return;
+  revealTimer=setInterval(function(){
+    if(tokenQueue.length>0){
+      var tok=tokenQueue.shift();
+      sText+=tok;
+      if(!sBubble) ensureBubble();
+      sBubble.innerHTML=esc(sText)+'<span class="cursor"></span>';
+      msgEl.scrollTop=msgEl.scrollHeight;
+    } else if(donePending){
+      // Queue drained after 'done' received — now render final markdown
+      finalizeNow();
+    }
+    // else: queue empty, done not yet received — keep timer alive for incoming tokens
+  },15); // 15ms ≈ 66 tokens/sec — visibly animated
+}
+
+function appendTok(tok){
+  if(!tok) return;
+  tokenQueue.push(tok);
+  startReveal();
+}
+
+/* Called when a done/tool_call/error/stop event arrives */
+function finalize(){
+  donePending=true;
+  if(!revealTimer){
+    // No timer running → no tokens queued or timer already stopped
+    // Flush any remaining and finalize immediately
+    while(tokenQueue.length) sText+=tokenQueue.shift();
+    donePending=false;
+    finalizeNow();
+  }
+  // else: timer is running; it will call finalizeNow() once queue is drained
+}
+
+function finalizeNow(){
+  if(revealTimer){clearInterval(revealTimer);revealTimer=null;}
+  donePending=false;
+  if(!sBubble){
+    if(sText.trim()===''){sText='';return;}
+    ensureBubble();
+  }
+  if(sText.trim()===''){
+    if(sBubble.parentElement) sBubble.parentElement.remove();
+    sBubble=null;sText='';return;
+  }
+  sBubble.innerHTML=renderMd(sText);sBubble=null;sText='';msgEl.scrollTop=msgEl.scrollHeight;
+}
+
+/* ── Tool step toggle ─────────────────────── */
+window.togTB=function(id){
+  var bd=document.getElementById('bd-'+id),ch=document.getElementById('ch-'+id);
+  if(bd&&ch){var o=bd.classList.toggle('open');ch.classList.toggle('open',o);ch.textContent=o?'▼':'▶';}
+};
+
+/* ── Permission data store (avoids putting content in HTML attributes) ── */
+var pendingPerms={};
+
+window.doApprove=function(cid){
+  var data=pendingPerms[cid];if(!data)return;
+  var c=document.getElementById(cid);
+  if(data.type==='write_file'){
+    if(c){c.querySelector('.pc-act').remove();c.querySelector('.pc-hd').innerHTML='📄 '+esc(data.path)+' <span class="badge-ok">writing...</span>';}
+    setStatus('thinking');
+    vscode.postMessage({command:'writeApproved',filePath:data.path,content:data.content,toolCallId:data.tcId});
+  }else if(data.type==='run_command'){
+    if(c){c.querySelector('.pc-act').remove();c.querySelector('.pc-hd').innerHTML='▶ '+esc(data.command)+' <span class="badge-ok">running...</span>';}
+    setStatus('thinking');
+    vscode.postMessage({command:'runApproved',text:data.command,toolCallId:data.tcId});
+  }
+  delete pendingPerms[cid];
+};
+window.doSkipPerm=function(cid){
+  var data=pendingPerms[cid];if(!data)return;
+  var c=document.getElementById(cid);
+  if(c){c.querySelector('.pc-act').remove();c.querySelector('.pc-hd').innerHTML+=' <span class="badge-no">skipped</span>';}
+  var reason=data.type==='write_file'?'User skipped writing '+data.path:'User skipped command';
+  continueAgent(reason,data.tcId);
+  delete pendingPerms[cid];
+};
+
+function continueAgent(result,toolCallId){
+  setStatus('thinking');
+  vscode.postMessage({command:'continueAgent',result:result,toolCallId:toolCallId});
+}
+
+/* ── Send message ─────────────────────────── */
+function sendMessage(){
+  var text=inputEl.value.trim();if(!text||sendBtn.disabled)return;
+  var d=document.createElement('div');d.className='msg user';
+  d.innerHTML='<span class="lbl">You</span><div class="bbl">'+esc(text)+'</div>';
+  msgEl.appendChild(d);msgEl.scrollTop=msgEl.scrollHeight;
+  inputEl.value='';inputEl.style.height='auto';sendBtn.disabled=true;
+  setStatus('thinking');
+  vscode.postMessage({command:'sendMessage',text:text});
+}
+
+sendBtn.addEventListener('click',function(){sendMessage();});
+inputEl.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+inputEl.addEventListener('input',function(){this.style.height='auto';this.style.height=this.scrollHeight+'px';});
+clearBtn.addEventListener('click',function(){msgEl.innerHTML='';sendBtn.disabled=false;providerTag.textContent='';setStatus('idle');vscode.postMessage({command:'clearHistory'});});
+
+/* ── Receive messages from extension ──────── */
+window.addEventListener('message',function(ev){
+  var m=ev.data;
+
+  if(m.type==='token'){appendTok(m.text);}
+
+  if(m.type==='provider'){
+    providerTag.textContent='('+m.name+')';
+    statusText.textContent='AI Coding Agent'; // clear any status text
+  }
+
+  if(m.type==='status'){
+    // Show live provider switching / rate-limit messages in header
+    statusText.textContent=m.text;
+  }
+
+  if(m.type==='tool_call'){
+    finalize(); // finalize any current text (removes if empty)
+    var bid='tb-'+Date.now()+Math.floor(Math.random()*9999);
+    var icons={'list_files':'📂 Listing files','read_file':'📖 Reading file','read_database':'🗄️ Reading database',
+      'run_db_query':'🔍 Querying DB','write_file':'✏️ Preparing write','run_command':'💻 Preparing command',
+      'search_files':'🔎 Searching files','ask_user':'❓ Asking user'};
+    var label=icons[m.tool]||('🔧 '+m.tool);
+    var detail=m.args.path||m.args.command||m.args.folder||m.args.query||m.args.question||JSON.stringify(m.args);
+    var d=document.createElement('div');d.className='msg agent';
+    d.innerHTML='<div class="tb" id="'+bid+'">'
+      +'<div class="tb-hd" onclick="togTB(\''+bid+'\')">'
+      +'<span class="tb-ch" id="ch-'+bid+'">▶</span>'
+      +'<span>'+label+'</span>'
+      +'<span style="opacity:.5;margin-left:auto;font-family:var(--vscode-editor-font-family);font-size:11px">'+esc(String(detail).substring(0,60))+'</span>'
+      +'</div>'
+      +'<div class="tb-bd" id="bd-'+bid+'"></div>'
+      +'</div>';
+    msgEl.appendChild(d);msgEl.scrollTop=msgEl.scrollHeight;
+    // Do NOT start a bubble here — wait for tokens
+  }
+
+  if(m.type==='tool_result'){
+    finalize(); // clear any stale bubble
+    var blocks=msgEl.querySelectorAll('.tb');var last=blocks[blocks.length-1];
+    if(last){
+      var bd=last.querySelector('.tb-bd'),summary='';
+      if(m.result.files)summary='📂 '+m.result.files.length+' files:\n'+m.result.files.join('\n');
+      else if(m.result.content)summary=m.result.content;
+      else if(m.result.matches)summary='🔎 '+m.result.matches.length+' matches:\n'+m.result.matches.map(function(x){return x.file+':'+x.line+' '+x.text;}).join('\n');
+      else if(m.result.tables)summary='🗄️ Tables: '+Object.keys(m.result.tables).join(', ')+'\n'+JSON.stringify(m.result.tables,null,2);
+      else if(m.result.results)summary='✅ '+m.result.results.length+' rows\n'+JSON.stringify(m.result.results,null,2);
+      else if(m.result.status==='error')summary='❌ '+m.result.message;
+      else summary=JSON.stringify(m.result,null,2);
+      if(bd)bd.textContent=summary;
+      var statusIcon=m.result.status==='error'?' ❌':' ✅';
+      var spans=last.querySelectorAll('.tb-hd span');if(spans.length>=2)spans[1].textContent+=statusIcon;
+    }
+    // Do NOT start a bubble here — wait for tokens
+  }
+
+  if(m.type==='needs_permission'){
+    finalize();
+    var p=m.result,tcId=m.tool_call_id;
+    var d=document.createElement('div');d.className='msg agent';
+    var cid='p'+Date.now();
+
+    if(p.type==='write_file'){
+      pendingPerms[cid]={type:'write_file',path:p.path,content:p.content,tcId:tcId};
+      var preview=p.content.length>400?p.content.substring(0,400)+'\n...':p.content;
+      d.innerHTML='<div class="pc" id="'+cid+'">'
+        +'<div class="pc-hd">⚠️ Write file?&nbsp;&nbsp;<span style="opacity:.7;font-weight:normal">📄 '+esc(p.path)+'</span></div>'
+        +'<div class="pc-bd">'+esc(preview)+'</div>'
+        +'<div class="pc-act">'
+        +'<button class="btn-ok" onclick="doApprove(\''+cid+'\')">' + String.fromCharCode(9989) + ' Write</button>'
+        +'<button class="btn-no" onclick="doSkipPerm(\''+cid+'\')">' + String.fromCharCode(10007) + ' Skip</button>'
+        +'</div></div>';
+    }else if(p.type==='run_command'){
+      pendingPerms[cid]={type:'run_command',command:p.command,tcId:tcId};
+      d.innerHTML='<div class="pc" id="'+cid+'">'
+        +'<div class="pc-hd">⚠️ Run command?</div>'
+        +'<div class="pc-bd">'+esc(p.command)+'</div>'
+        +'<div class="pc-act">'
+        +'<button class="btn-ok" onclick="doApprove(\''+cid+'\')">' + String.fromCharCode(9654) + ' Run</button>'
+        +'<button class="btn-no" onclick="doSkipPerm(\''+cid+'\')">' + String.fromCharCode(10007) + ' Skip</button>'
+        +'</div></div>';
+    }else if(p.type==='ask_user'){
+      d.innerHTML='<div class="bbl">❓ '+esc(p.question)+'</div>';
+      setStatus('idle');sendBtn.disabled=false;
+    }
+    msgEl.appendChild(d);msgEl.scrollTop=msgEl.scrollHeight;
+    if(p.type!=='ask_user')setStatus('waiting');
+  }
+
+  if(m.type==='error'){
+    finalize();
+    var d=document.createElement('div');d.className='msg agent';
+    d.innerHTML='<div class="err-bbl">❌ '+esc(m.text)+'</div>';
+    msgEl.appendChild(d);msgEl.scrollTop=msgEl.scrollHeight;setStatus('idle');
+  }
+
+  if(m.type==='done'){
+    finalize();
+    setTimeout(function(){
+      var cards=msgEl.querySelectorAll('.pc-act');
+      if(cards.length>0){setStatus('waiting');}else{
+          setStatus('idle');
+          if(m.elapsed) {
+              statusText.textContent += ' (took ' + m.elapsed.toFixed(1) + 's)';
+          }
+      }
+    },200);
+  }
+
+  if(m.type==='stopped'){finalize();sendBtn.disabled=false;setStatus('idle');}
+
+  if(m.command==='actionDone'){
+    var rd=document.createElement('div');rd.className='msg agent';
+    var icon=m.success?'✅':'❌',clr=m.success?'#4caf50':'#f44336';
+    rd.innerHTML='<div class="bbl" style="border-left:3px solid '+clr+';font-family:var(--vscode-editor-font-family);font-size:12px;white-space:pre-wrap">'
+      +icon+' '+esc(m.result)+'</div>';
+    msgEl.appendChild(rd);msgEl.scrollTop=msgEl.scrollHeight;
+    continueAgent(m.result,m.toolCallId||'');
+  }
+
+  if(m.command==='commandRunning'){
+    var rd=document.createElement('div');rd.className='msg agent';
+    rd.innerHTML='<div class="bbl" style="font-family:var(--vscode-editor-font-family);font-size:12px;opacity:.7">▶ Running: '+esc(m.text)+'...</div>';
+    msgEl.appendChild(rd);msgEl.scrollTop=msgEl.scrollHeight;
+  }
+});
+})();
+</script>
+</body>
+</html>
