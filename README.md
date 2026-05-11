@@ -1,7 +1,10 @@
 # AI Coding Agent — VS Code Extension
 
-An agentic AI coding assistant for VS Code, powered by **Gemini 2.0 Flash** (primary) and **Groq Llama 3.3 70B** (fallback).
+An agentic AI coding assistant for VS Code. 
 
+**Why I built this:** I created this project for my personal use because premium AI coding tools (like Cursor, GitHub Copilot) are expensive, and I wanted a fully functional, free alternative. 
+
+This agent uses **Chain of Thought (CoT)** step-by-step reasoning and a robust fallback system utilizing high-limit, free cloud LLM providers. Currently powered by **Cerebras Llama 3.1 70B/8B** (primary for blazing fast inference), with automatic fallbacks to **Gemini 2.0 Flash**, **Groq**, and **OpenRouter** to ensure it never gets rate-limited.
 ## Architecture
 
 ```
